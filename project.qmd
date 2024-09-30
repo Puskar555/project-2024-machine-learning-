@@ -1,0 +1,100 @@
+###In this project, you will use regression models to predict the number of days a customer rents DVDs for.
+
+As with most data science projects, you will need to pre-process the data provided, in this case, a csv file called rental_info.csv. Specifically, you need to:
+
+Read in the csv file rental_info.csv using pandas.
+Create a column named "rental_length_days" using the columns "return_date" and "rental_date", and add it to the pandas DataFrame. This column should contain information on how many days a DVD has been rented by a customer.
+Create two columns of dummy variables from "special_features", which takes the value of 1 when:
+The value is "Deleted Scenes", storing as a column called "deleted_scenes".
+The value is "Behind the Scenes", storing as a column called "behind_the_scenes".
+Make a pandas DataFrame called X containing all the appropriate features you can use to run the regression models, avoiding columns that leak data about the target.
+Choose the "rental_length_days" as the target column and save it as a pandas Series called y.
+Following the preprocessing you will need to:
+
+Split the data into X_train, y_train, X_test, and y_test train and test sets, avoiding any features that leak data about the target variable, and include 20% of the total data in the test set.
+Set random_state to 9 whenever you use a function/method involving randomness, for example, when doing a test-train split.
+Recommend a model yielding a mean squared error (MSE) less than 3 on the test set
+
+Save the model you would recommend as a variable named best_model, and save its MSE on the test set as best_mse.
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# Load the dataset
+file_path = 'rental_info.csv'
+data = pd.read_csv(file_path)
+
+# Convert rental_date and return_date to datetime to calculate rental duration
+data['rental_date'] = pd.to_datetime(data['rental_date'])
+data['return_date'] = pd.to_datetime(data['return_date'])
+
+# Create a new column for rental length in days
+data['rental_length_days'] = (data['return_date'] - data['rental_date']).dt.days 
+
+
+# Create dummy variables for 'special_features'
+data['deleted_scenes'] = data['special_features'].apply(lambda x: 1 if 'Deleted Scenes' in str(x) else 0)
+data['behind_the_scenes'] = data['special_features'].apply(lambda x: 1 if 'Behind the Scenes' in str(x) else 0)
+
+# Drop the original 'special_features' column since we no longer need it
+data = data.drop(columns=['special_features'])
+
+
+# Drop columns that leak data (like dates) and the target variable
+X = data.drop(columns=['rental_length_days', 'rental_date', 'return_date'])
+
+# The target variable is 'rental_length_days'
+y = data['rental_length_days'] 
+
+# Split the data into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=9)
+
+
+##5. Train and Evaluate Multiple Models
+
+
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+
+# Linear Regression Model
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
+mse_lr = mean_squared_error(y_test, y_pred_lr)
+
+# Random Forest Regressor
+rf = RandomForestRegressor(random_state=9)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+mse_rf = mean_squared_error(y_test, y_pred_rf)
+
+# Gradient Boosting Regressor
+gb = GradientBoostingRegressor(random_state=9)
+gb.fit(X_train, y_train)
+y_pred_gb = gb.predict(X_test)
+mse_gb = mean_squared_error(y_test, y_pred_gb)
+
+# Print MSE for each model
+print(f"Linear Regression MSE: {mse_lr}")
+print(f"Random Forest MSE: {mse_rf}")
+print(f"Gradient Boosting MSE: {mse_gb}") 
+
+##6. Select the Best Model and Save It
+# Select the model with the best performance
+if mse_lr <= 3 and mse_lr <= mse_rf and mse_lr <= mse_gb:
+    best_model = lr
+    best_mse = mse_lr
+elif mse_rf <= 3 and mse_rf <= mse_lr and mse_rf <= mse_gb:
+    best_model = rf
+    best_mse = mse_rf
+elif mse_gb <= 3 and mse_gb <= mse_lr and mse_gb <= mse_rf:
+    best_model = gb
+    best_mse = mse_gb
+else:
+    print("No model achieved an MSE less than 3.")
+    
+# Print the best model and its MSE
+print(f"Best Model: {best_model}")
+print(f"Best MSE: {best_mse}")
